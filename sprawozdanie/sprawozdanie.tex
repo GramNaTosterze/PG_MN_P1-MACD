@@ -1,0 +1,124 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{csvsimple}
+\usepackage{booktabs}
+
+\newcommand{\companyName}{Nintendo Co. Ltd } % Szybka zmiana w razie zmiany danych
+\newcommand{\samplesFrom}{02.01.2019 }
+\newcommand{\samplesTo}{13.03.2023}
+\graphicspath{{../Images/}}
+\title{Wskaźnik Giełdowy MACD}
+\date{27.03.2023}
+\author{Krzysztof Napiórkowski}
+
+
+\begin{document}
+\maketitle
+    \section{Wstęp}
+    Celem projektu jest implementacja wskaźnika giełdowego MACD oraz przedstawienie algorytmu wykorzystującego go do zautomatyzowania kupna i sprzedarzy akcji. 
+    Do realizacji wykorzystałem język Python z bibliotekami: pandas, numpy oraz matplotlib.
+    Wskaźnik jest wykonany dla \companyName, dane pobrane z Yahoo finance.
+
+    \section{Analiza zadania}
+    
+    \subsection{Dane}
+    Dane wskaźnika dotyczą notowania spółki w okresie od \samplesFrom do \samplesTo. \\
+    Z przedziału brane było 1000 próbek, w danych mogło brakować niektórych dni. Na potrzeby zadania dane były traktowane jako kolejne dni.
+    Średnia krocząca jest obliczana z ceny zamknięcia.
+
+    \begin{figure}[ht]
+        \centering
+        \includegraphics[scale=0.5]{Samples}
+        \caption{Notowania spółki \companyName w okresie od \samplesFrom do \samplesTo}
+        \label{fig:samples}
+    \end{figure}
+
+    \subsection{Podstawa teoretyczna}
+    Wskaźnik MACD składa się z dwóch wykresów: MACD oraz linii sygnałowej SIGNAL. 
+    Oba opierają się na wykładniczej średniej kroczącej, określonej wzorem: \\
+    \begin{equation}
+        EMA_{N} = \frac{p_{0} + (1-\alpha)p_{1} + \dots + (1-\alpha)^N p_{N}}{(1-\alpha) + \dots + (1-\alpha)^N}
+    \end{equation}
+    gdzie: \\ \newline
+    $ \alpha = \frac{2}{N - 1} $ \\
+    $ N $ - liczba okresów \\
+    $ p_{i} $ - wartość danej sprzed $ i $ dni \\
+
+    Składowa MACD jest różnicą $ EMA_{12} - EMA_{26} $ obliczoną w oparciu o dane. Linia sygnałowa SINGAL jest obliczana jako $ EMA_{9} $ ze składowej MACD.
+
+    \subsection{Wykres składowych wskaźnika MACD}
+    \begin{figure}[ht]
+        \includegraphics[width=\textwidth]{MACD}
+        \caption{wskaźnik MACD dla \companyName}
+        \label{fig:macd}
+    \end{figure}
+
+    \subsection{analiza wskaźnika MACD}
+    Wskaźnik MACD jest wykorzystywany do inwestycji przecięcie lini sygnału przez linię MACD od dołu oznacza zapowiedź trendu wzrostowego i jest sygnałem kupna.
+    przecięcie od góry oznacza zapowiedź trendu opadającego i jest sygnałem sprzedaży.
+    \begin{figure}[ht]
+        \includegraphics[width=\textwidth]{TradeSignals}
+        \caption{Przedstawienie sygnałów zakupu i sprzedarzy na podstawie MACD}
+        \label{fig:compare}
+    \end{figure}
+    
+    Jak widać na wykresie w wielu przypadkach sygnał kupna pojawia się za wcześnie i ostatecznie kolejny sygnał sprzedarzy nie przewyższa początkowego.
+    Wskaźnik sprawdza się w momencie w którym same notowania rosnął to w takim przypadku dobrze wykrywa momenty kupna i sprzedarzy.  Gdy notowanie spada to wykrywa wzrosty lokalne i daje fałszywe sygnały.
+
+
+    \newpage
+    \section{Algorytm automatyzujący}
+    Algorytmu polega na sprzedarzy i kupnie w momencie przecięcia się MACD oraz SIGNAL oraz określenia trendu zwyżkującego, bądź zniżkującego, poprzez sprawdzanie wartości MACD.
+    dla porównania przedstawiam 3 wersje: kupno i sprzedarz po 1 akcji, sprzedarz i kupno wszyskiego możliwego oraz sprzedarz i kupno 50\% możliwych akcji.
+
+    \subsection{sprzedarz po 1 akcji:}
+    \begin{table}[ht]
+        \centering
+        \input{../PG_MN_Proj1_Data/TradeHistory1.tex}
+        \caption{Zestawienie zarobku dla wyznaczonych dni}
+    \end{table}
+    Metoda sprzedarzy i kupna po jednej akcji nie okazała się zbytnio opłacalna, choś udało nam się zarobić około \$20 to w skali 5 lat nie jest to znaczący zarobek.
+
+    \subsection{sprzedarz po 50\% posiadanych akcji oraz kupnie 50\% możliwych:}
+    \begin{table}[ht]
+        \centering
+        \input{../PG_MN_Proj1_Data/TradeHistory50p.tex}
+        \caption{Zestawienie zarobku dla wyznaczonych dni}
+    \end{table}
+    Metoda najbardziej skuteczna, choć ciągle nie na tyle opłacalna aby ryzykować na prawdziwej giełdzie.
+    
+
+    \subsection{sprzedarz wszystkich akcji oraz kupno wszystkich możliwych:}
+    \begin{table}[ht]
+        \centering
+        \input{../PG_MN_Proj1_Data/TradeHistoryAll.tex}
+        \caption{Zestawienie zarobku dla wyznaczonych dni}
+    \end{table}
+    Chociaż okazała się najbardziej skuteczna to również jest najbardziej podatna na fałszywe sygnały. Więc jej skuteczność jest najbardziej zależna od szczęśćia.
+    
+    \subsection{wykrsy zysku aktualny kapitał + cena akcji disiaj * ilość akcji - początkowy kapitał}
+    \begin{figure}[ht]
+        \centering
+        \includegraphics[scale=0.6]{MethodComparision}
+        \caption{Zestawienie zarobków dla trzech podanych metod handlu}
+    \end{figure}    
+
+    Na Rysunku 4 widać dokładny podział na wykresach. W pierwszej części widać znikomy, bądź nawet zerowy zysk. Widoczny zysk ukazujes się dopiero po jakimś czasie. 
+    Może być to spowodowane, że wskaźnik MACD jest opóźniony oraz słabym wzrostem notowania w tej części.
+    
+    \section{Podsumowanie i wnioski}
+    Krzywa MACD jest bardzo przydatnym narzędziem do badania notowań giełdowych ale przez opóźnienie w notowaniu może skutkować w stratę, szczególnie dla inwestycji krótkoterminowych. 
+
+    \section{Źródła}
+    dane - https://finance.yahoo.com/quote/NTDOY/history?p=NTDOY\\
+    https://en.wikipedia.org/wiki/MACD\\
+    https://www.edukacjagieldowa.pl/gieldowe-abc/analiza-techniczna/narzedzia-analizy-technicznej/krzywa-macd/\\
+    instrukcja do zadania\\
+
+\end{document}
